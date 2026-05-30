@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"baseUrl": ".",
+		"sourceMap": false,
+		"module": "CommonJS",
+		"target": "ES2018",
+		"allowSyntheticDefaultImports": true,
+		"moduleResolution": "node",
+		"importHelpers": true,
+		"isolatedModules": true,
+		"strictNullChecks": true,
+		"lib": [
+			"DOM",
+			"ES2018"
+		]
+	},
+	"include": [
+		"main.ts"
+	]
+}

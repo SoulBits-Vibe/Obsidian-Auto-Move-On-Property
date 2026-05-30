@@ -1,0 +1,10 @@
+{
+  "id": "auto-move-on-property",
+  "name": "Auto Move On Property",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Automatically moves notes from root to folders based on a YAML property.",
+  "author": "destiny911",
+  "authorUrl": "",
+  "isDesktopOnly": true
+}

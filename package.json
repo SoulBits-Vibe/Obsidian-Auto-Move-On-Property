@@ -1,0 +1,12 @@
+{
+  "name": "auto-move-on-property",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "obsidian": "^1.5.8",
+    "typescript": "^5.0.0"
+  }
+}
