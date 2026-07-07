@@ -4,7 +4,7 @@
   "version": "1.0.1",
   "minAppVersion": "0.15.0",
   "description": "Automatically moves notes from root to folders based on a YAML property.",
-  "author": "destiny911",
-  "authorUrl": "",
+  "author": "soulbits-vibe",
+  "authorUrl": "https://github.com/soulbits-vibe",
   "isDesktopOnly": true
 }
