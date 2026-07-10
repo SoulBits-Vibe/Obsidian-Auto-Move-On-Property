@@ -1,12 +1,10 @@
 import {
 	App,
-	ExtraButtonComponent,
 	Notice,
 	Plugin,
 	PluginSettingTab,
 	Setting,
 	TFile,
-	TextComponent,
 	normalizePath,
 } from "obsidian";
 
@@ -31,6 +29,42 @@ const DEFAULT_SETTINGS: AutoMoveSettings = {
 	watchedFolders: "",
 	watchRoot: true,
 };
+
+function isMoveRule(value: unknown): value is MoveRule {
+	return typeof value === "object" &&
+		value !== null &&
+		"property" in value &&
+		typeof value.property === "string" &&
+		"value" in value &&
+		typeof value.value === "string" &&
+		"folder" in value &&
+		typeof value.folder === "string";
+}
+
+function parseSettings(data: unknown): Partial<AutoMoveSettings> {
+	if (typeof data !== "object" || data === null) {
+		return {};
+	}
+
+	const settings: Partial<AutoMoveSettings> = {};
+	if ("rules" in data && Array.isArray(data.rules)) {
+		settings.rules = data.rules.filter(isMoveRule);
+	}
+	if ("showMoveToast" in data && typeof data.showMoveToast === "boolean") {
+		settings.showMoveToast = data.showMoveToast;
+	}
+	if ("showDebugToast" in data && typeof data.showDebugToast === "boolean") {
+		settings.showDebugToast = data.showDebugToast;
+	}
+	if ("watchedFolders" in data && typeof data.watchedFolders === "string") {
+		settings.watchedFolders = data.watchedFolders;
+	}
+	if ("watchRoot" in data && typeof data.watchRoot === "boolean") {
+		settings.watchRoot = data.watchRoot;
+	}
+
+	return settings;
+}
 
 class AutoMoveOnPropertyPlugin extends Plugin {
 	settings: AutoMoveSettings = DEFAULT_SETTINGS;
@@ -123,7 +157,7 @@ class AutoMoveOnPropertyPlugin extends Plugin {
 							return;
 						}
 
-						await this.app.vault.createFolder(newFolder).catch(() => {});
+						await this.app.vault.adapter.mkdir(newFolder).catch(() => {});
 						await this.app.fileManager.renameFile(file, newPath);
 
 						if (this.settings.showMoveToast) {
@@ -137,7 +171,8 @@ class AutoMoveOnPropertyPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const data: unknown = await this.loadData();
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, parseSettings(data));
 	}
 
 	async saveSettings(): Promise<void> {
@@ -156,7 +191,8 @@ class AutoMoveSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		containerEl.createEl("h2", { text: "Auto Move On Property Settings" });
+
+		new Setting(containerEl).setName("Auto Move On Property Settings").setHeading();
 
 		new Setting(containerEl)
 			.setName("Always watch vault root")
@@ -173,11 +209,11 @@ class AutoMoveSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Watched folders")
 			.setDesc("Comma-separated list of folders to watch (e.g. folder1,folder/folder2). Does not affect vault root.")
-			.addText((text: TextComponent) =>
+			.addText((text) =>
 				text
 					.setPlaceholder("folder1,folder/folder2")
 					.setValue(this.plugin.settings.watchedFolders || "")
-					.onChange(async (value: string) => {
+					.onChange(async (value) => {
 						this.plugin.settings.watchedFolders = value;
 						await this.plugin.saveSettings();
 					})
@@ -208,23 +244,27 @@ class AutoMoveSettingTab extends PluginSettingTab {
 			);
 
 		const topBar = containerEl.createDiv();
-		topBar.style.display = "flex";
-		topBar.style.gap = "10px";
-		topBar.style.alignItems = "center";
-		topBar.style.marginBottom = "12px";
+		topBar.setCssStyles({
+			display: "flex",
+			gap: "10px",
+			alignItems: "center",
+			marginBottom: "12px",
+		});
 
 		const addBtn = topBar.createEl("button", { text: "+ Add Rule" });
-		const filterInput = topBar.createEl("input") as HTMLInputElement;
+		const filterInput = topBar.createEl("input");
 		filterInput.type = "text";
 		filterInput.placeholder = "filter rules...";
-		filterInput.style.flex = "1";
-		filterInput.style.padding = "4px 8px";
-		filterInput.style.borderRadius = "4px";
-		filterInput.style.border = "1px solid var(--background-modifier-border)";
-		filterInput.style.background = "var(--background-primary)";
-		filterInput.style.color = "var(--text-normal)";
+		filterInput.setCssStyles({
+			flex: "1",
+			padding: "4px 8px",
+			borderRadius: "4px",
+			border: "1px solid var(--background-modifier-border)",
+			background: "var(--background-primary)",
+			color: "var(--text-normal)",
+		});
 
-		containerEl.createEl("h3", { text: "Move Rules" });
+		new Setting(containerEl).setName("Move Rules").setHeading();
 		const rulesContainer = containerEl.createDiv();
 
 		const renderRules = (filter: string) => {
@@ -243,37 +283,37 @@ class AutoMoveSettingTab extends PluginSettingTab {
 
 				new Setting(rulesContainer)
 					.setName("Rule")
-					.addText((text: TextComponent) =>
+					.addText((text) =>
 						text
 							.setPlaceholder("Property")
 							.setValue(rule.property)
-							.onChange(async (value: string) => {
+							.onChange(async (value) => {
 								rule.property = value;
 								await this.plugin.saveSettings();
 							})
 					)
-					.addText((text: TextComponent) =>
+					.addText((text) =>
 						text
 							.setPlaceholder("Value")
 							.setValue(rule.value)
-							.onChange(async (value: string) => {
+							.onChange(async (value) => {
 								rule.value = value;
 								await this.plugin.saveSettings();
 							})
 					)
-					.addText((text: TextComponent) =>
+					.addText((text) =>
 						text
 							.setPlaceholder("Folder")
 							.setValue(rule.folder)
-							.onChange(async (value: string) => {
+							.onChange(async (value) => {
 								rule.folder = value;
 								await this.plugin.saveSettings();
 							})
 					)
-					.addExtraButton((btn: ExtraButtonComponent) =>
+					.addButton((btn) =>
 						btn
-							.setIcon("cross")
-							.setTooltip("Delete rule")
+							.setButtonText("Delete")
+							.setWarning()
 							.onClick(async () => {
 								this.plugin.settings.rules.splice(idx, 1);
 								await this.plugin.saveSettings();

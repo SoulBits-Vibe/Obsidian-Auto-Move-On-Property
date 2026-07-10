@@ -7,6 +7,38 @@ const DEFAULT_SETTINGS = {
     watchedFolders: "",
     watchRoot: true,
 };
+function isMoveRule(value) {
+    return typeof value === "object" &&
+        value !== null &&
+        "property" in value &&
+        typeof value.property === "string" &&
+        "value" in value &&
+        typeof value.value === "string" &&
+        "folder" in value &&
+        typeof value.folder === "string";
+}
+function parseSettings(data) {
+    if (typeof data !== "object" || data === null) {
+        return {};
+    }
+    const settings = {};
+    if ("rules" in data && Array.isArray(data.rules)) {
+        settings.rules = data.rules.filter(isMoveRule);
+    }
+    if ("showMoveToast" in data && typeof data.showMoveToast === "boolean") {
+        settings.showMoveToast = data.showMoveToast;
+    }
+    if ("showDebugToast" in data && typeof data.showDebugToast === "boolean") {
+        settings.showDebugToast = data.showDebugToast;
+    }
+    if ("watchedFolders" in data && typeof data.watchedFolders === "string") {
+        settings.watchedFolders = data.watchedFolders;
+    }
+    if ("watchRoot" in data && typeof data.watchRoot === "boolean") {
+        settings.watchRoot = data.watchRoot;
+    }
+    return settings;
+}
 class AutoMoveOnPropertyPlugin extends obsidian_1.Plugin {
     constructor() {
         super(...arguments);
@@ -86,7 +118,7 @@ class AutoMoveOnPropertyPlugin extends obsidian_1.Plugin {
                     if (path === newPath) {
                         return;
                     }
-                    await this.app.vault.createFolder(newFolder).catch(() => { });
+                    await this.app.vault.adapter.mkdir(newFolder).catch(() => { });
                     await this.app.fileManager.renameFile(file, newPath);
                     if (this.settings.showMoveToast) {
                         new obsidian_1.Notice(`Moved: ${file.name} -> ${newFolder}`);
@@ -97,7 +129,8 @@ class AutoMoveOnPropertyPlugin extends obsidian_1.Plugin {
         }));
     }
     async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        const data = await this.loadData();
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, parseSettings(data));
     }
     async saveSettings() {
         await this.saveData(this.settings);
@@ -111,7 +144,7 @@ class AutoMoveSettingTab extends obsidian_1.PluginSettingTab {
     display() {
         const { containerEl } = this;
         containerEl.empty();
-        containerEl.createEl("h2", { text: "Auto Move On Property Settings" });
+        new obsidian_1.Setting(containerEl).setName("Auto Move On Property Settings").setHeading();
         new obsidian_1.Setting(containerEl)
             .setName("Always watch vault root")
             .setDesc("If enabled, notes in the vault root will always be watched.")
@@ -150,21 +183,25 @@ class AutoMoveSettingTab extends obsidian_1.PluginSettingTab {
             await this.plugin.saveSettings();
         }));
         const topBar = containerEl.createDiv();
-        topBar.style.display = "flex";
-        topBar.style.gap = "10px";
-        topBar.style.alignItems = "center";
-        topBar.style.marginBottom = "12px";
+        topBar.setCssStyles({
+            display: "flex",
+            gap: "10px",
+            alignItems: "center",
+            marginBottom: "12px",
+        });
         const addBtn = topBar.createEl("button", { text: "+ Add Rule" });
         const filterInput = topBar.createEl("input");
         filterInput.type = "text";
         filterInput.placeholder = "filter rules...";
-        filterInput.style.flex = "1";
-        filterInput.style.padding = "4px 8px";
-        filterInput.style.borderRadius = "4px";
-        filterInput.style.border = "1px solid var(--background-modifier-border)";
-        filterInput.style.background = "var(--background-primary)";
-        filterInput.style.color = "var(--text-normal)";
-        containerEl.createEl("h3", { text: "Move Rules" });
+        filterInput.setCssStyles({
+            flex: "1",
+            padding: "4px 8px",
+            borderRadius: "4px",
+            border: "1px solid var(--background-modifier-border)",
+            background: "var(--background-primary)",
+            color: "var(--text-normal)",
+        });
+        new obsidian_1.Setting(containerEl).setName("Move Rules").setHeading();
         const rulesContainer = containerEl.createDiv();
         const renderRules = (filter) => {
             rulesContainer.empty();
@@ -199,9 +236,9 @@ class AutoMoveSettingTab extends obsidian_1.PluginSettingTab {
                     rule.folder = value;
                     await this.plugin.saveSettings();
                 }))
-                    .addExtraButton((btn) => btn
-                    .setIcon("cross")
-                    .setTooltip("Delete rule")
+                    .addButton((btn) => btn
+                    .setButtonText("Delete")
+                    .setWarning()
                     .onClick(async () => {
                     this.plugin.settings.rules.splice(idx, 1);
                     await this.plugin.saveSettings();
