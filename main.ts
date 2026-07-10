@@ -192,8 +192,6 @@ class AutoMoveSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		new Setting(containerEl).setName("Auto Move On Property Settings").setHeading();
-
 		new Setting(containerEl)
 			.setName("Always watch vault root")
 			.setDesc("If enabled, notes in the vault root will always be watched.")
@@ -310,16 +308,15 @@ class AutoMoveSettingTab extends PluginSettingTab {
 								await this.plugin.saveSettings();
 							})
 					)
-					.addButton((btn) =>
-						btn
-							.setButtonText("Delete")
-							.setWarning()
+					.addButton((btn) => {
+						btn.buttonEl.addClass("mod-destructive");
+						btn.setButtonText("Delete")
 							.onClick(async () => {
 								this.plugin.settings.rules.splice(idx, 1);
 								await this.plugin.saveSettings();
 								renderRules(filterInput.value);
-							})
-					);
+							});
+					});
 			});
 		};
 

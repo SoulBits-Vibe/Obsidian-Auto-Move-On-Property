@@ -1,10 +1,10 @@
 {
   "id": "auto-move-on-property",
   "name": "Auto Move On Property",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "minAppVersion": "0.15.0",
   "description": "Automatically moves notes from root to folders based on a YAML property.",
-  "author": "SoulBits-Vibe",
-  "authorUrl": "https://github.com/SoulBits-Vibe",
+  "author": "soulbits-vibe",
+  "authorUrl": "https://github.com/soulbits-vibe",
   "isDesktopOnly": true
 }

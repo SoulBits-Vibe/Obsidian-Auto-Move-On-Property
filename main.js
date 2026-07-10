@@ -144,7 +144,6 @@ class AutoMoveSettingTab extends obsidian_1.PluginSettingTab {
     display() {
         const { containerEl } = this;
         containerEl.empty();
-        new obsidian_1.Setting(containerEl).setName("Auto Move On Property Settings").setHeading();
         new obsidian_1.Setting(containerEl)
             .setName("Always watch vault root")
             .setDesc("If enabled, notes in the vault root will always be watched.")
@@ -236,14 +235,15 @@ class AutoMoveSettingTab extends obsidian_1.PluginSettingTab {
                     rule.folder = value;
                     await this.plugin.saveSettings();
                 }))
-                    .addButton((btn) => btn
-                    .setButtonText("Delete")
-                    .setWarning()
-                    .onClick(async () => {
-                    this.plugin.settings.rules.splice(idx, 1);
-                    await this.plugin.saveSettings();
-                    renderRules(filterInput.value);
-                }));
+                    .addButton((btn) => {
+                    btn.buttonEl.addClass("mod-destructive");
+                    btn.setButtonText("Delete")
+                        .onClick(async () => {
+                        this.plugin.settings.rules.splice(idx, 1);
+                        await this.plugin.saveSettings();
+                        renderRules(filterInput.value);
+                    });
+                });
             });
         };
         addBtn.onclick = async () => {
